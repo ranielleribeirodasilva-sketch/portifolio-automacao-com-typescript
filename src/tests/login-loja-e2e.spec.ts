@@ -1,47 +1,79 @@
 import { test, expect } from '@playwright/test';
 
-// 1. A URL base já termina com 'login.html'
-const BASE_URL = 'https://alisonmelo.github.io/tioalison-pe-t4-fap26/projetos-base/01-sistema-login/login.html';
+const BASE_URL = 'https://github.io';
 
-// 2. Removido o 'async' do test.describe
-test.describe('ato 1 - validar carregamento e visibilidade de elementos', () => {
-
-  test('Validar titulo de carregamento da pagina', async ({ page }) => {
-    // Passando a constante diretamente (sem interpolação com aspas simples)
-    await page.goto(BASE_URL);
+test.describe('ATO 1 - Validar carregamento e visibilidade de elementos', () => {
     
-    // Validar título da página
-    await expect(page).toHaveTitle(/LojaQA | entrar/i);
-  });
+    test('Validar título de carregamento da página', async ({ page }) => {
+        await page.goto(BASE_URL);
+        await expect(page).toHaveTitle(/LojaQA | Entrar/);
+    });
 
-  test('Verificar exibicao dos campos do form de login', async ({ page }) => {
-    // Passando a constante diretamente
-    await page.goto(BASE_URL);
-
-    // Validar campos do formulário
-    await expect(page.locator('#email')).toBeVisible();
-    await expect(page.locator('#password')).toBeVisible();
-    await expect(page.locator('#loginBtn')).toBeVisible();
-    
-    // Verificar se botão de login está desabilitado
-    await expect(page.locator('#loginBtn')).toBeDisabled();
-  });
-
+    test('Verificar exibição dos campos do formulário de login', async ({ page }) => {
+        await page.goto(BASE_URL);
+        await expect(page.locator('#email')).toBeVisible();
+        await expect(page.locator('#password')).toBeVisible();
+        await expect(page.locator('#loginBtn')).toBeVisible();
+        await expect(page.locator('#loginBtn')).toBeDisabled();
+    });
 });
 
 test.describe('ATO 2 - Caminho feliz', () => {
-  test('validar acesso e redicionar ao painel', async ({ page }) => {
-    //navegar ate a pagina de login
-    await page.goto(`${BASE_URL}/login.html`);
-    //preencher campos utilizando o fill()
-    await page.fill('#email','admin@system.com');
-    await page.fill('#password','adminPassword123');  
-    //validar botao ativo
-    await expect(page.locator('#loginBtn')).toBeEnabled();
-    //acao de clique no btn
-    await page.click('#loginBtn');
-    //validar redirecionamento para a pagina de painel
-    await expect(page).toHaveURL(/painel\.html/);
-})
-})
+    
+    test('Validar acesso e redirecionar ao painel', async ({ page }) => {
+        await page.goto(BASE_URL);
+        await page.fill('#email', 'user@system.com');
+        await page.fill('#password', 'UserPassword123');
+        await expect(page.locator('#loginBtn')).toBeEnabled();
+        await page.click('#loginBtn');
+        await expect(page).toHaveURL(/.*painel/); 
+    });
+});
 
+test.describe('ATO 3 - Fluxos de cadastro e login de novos usuários', () => {
+
+    test('Criar usuário cliente, validar cadastro e realizar login', async ({ page }) => {
+        const idUnico = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const emailCliente = `cliente_${idUnico}@system.com`;
+
+        await page.goto(BASE_URL);
+        await page.click('text=Criar conta');
+
+        await page.fill('#registerName', 'Cliente de Teste');
+        await page.fill('#registerEmail', emailCliente);
+        await page.fill('#registerPassword', 'ClienteSenha123');
+        await page.selectOption('#registerRole', 'client');
+        await page.click('#registerBtn');
+
+        // Recomendado: Validar se apareceu mensagem de sucesso ou modal antes de prosseguir
+        await page.click('text=Voltar para login');
+
+        await page.fill('#email', emailCliente);
+        await page.fill('#password', 'ClienteSenha123');
+        await page.click('#loginBtn');
+        await expect(page).toHaveURL(/.*painel/);
+    });
+
+    test('Criar usuário lojista, validar cadastro e realizar login', async ({ page }) => {
+        const idUnico = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const emailLojista = `lojista_${idUnico}@system.com`;
+
+        await page.goto(BASE_URL);
+        await page.click('text=Criar conta');
+
+        await page.fill('#registerName', 'Lojista de Teste');
+        await page.fill('#registerEmail', emailLojista);
+        await page.fill('#registerPassword', 'LojistaSenha123');
+        await page.selectOption('#registerRole', 'seller');
+        await page.fill('#storeName', 'Minha Loja de Teste');
+        await page.click('#registerBtn');
+
+        // Recomendado: Validar se apareceu mensagem de sucesso ou modal antes de prosseguir
+        await page.click('text=Voltar para login');
+
+        await page.fill('#email', emailLojista);
+        await page.fill('#password', 'LojistaSenha123');
+        await page.click('#loginBtn');
+        await expect(page).toHaveURL(/.*painel/);
+    });
+});
